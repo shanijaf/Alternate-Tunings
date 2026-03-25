@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Shift Theory: Open G</title>
+    <style>
+        :root {
+            --bg: #0d1117;
+            --card-bg: #161b22;
+            --cyan: #00f2ff;
+            --amber: #ff9d00;
+            --text: #c9d1d9;
+        }
+
+        body {
+            margin: 0; background: var(--bg); color: var(--text);
+            font-family: 'Courier New', Courier, monospace; overflow: hidden;
+        }
+
+        /* The Swipe Container */
+        .deck {
+            display: flex; overflow-x: auto; scroll-snap-type: x mandatory;
+            height: 100vh; width: 100vw; -webkit-overflow-scrolling: touch;
+        }
+
+        .card {
+            flex: 0 0 100vw; height: 100vh; scroll-snap-align: start;
+            display: flex; flex-direction: column; align-items: center;
+            justify-content: center; box-sizing: border-box; padding: 20px;
+        }
+
+        .card-inner {
+            background: var(--card-bg); border: 2px solid var(--cyan);
+            border-radius: 15px; width: 90%; max-width: 400px;
+            height: 70%; position: relative; padding: 20px;
+            box-shadow: 0 0 20px rgba(0, 242, 255, 0.2);
+        }
+
+        h2 { color: var(--cyan); text-transform: uppercase; font-size: 1.2rem; margin-top: 0; }
+        
+        /* The Fretboard Grid */
+        .fretboard {
+            display: grid; grid-template-columns: repeat(6, 1fr);
+            grid-template-rows: repeat(6, 1fr); height: 70%;
+            border: 1px solid #30363d; margin-top: 20px; position: relative;
+        }
+
+        .string { border-right: 1px solid #484f58; height: 100%; position: relative; }
+        .fret { border-bottom: 2px solid #8b949e; height: 100%; width: 100%; }
+
+        /* Note Markers */
+        .note {
+            width: 20px; height: 20px; background: var(--amber);
+            border-radius: 50%; position: absolute; transform: translate(-50%, -50%);
+            box-shadow: 0 0 10px var(--amber); z-index: 10;
+        }
+
+        .label { position: absolute; bottom: 20px; font-size: 0.8rem; color: #8b949e; }
+    </style>
+</head>
+<body>
+
+<div class="deck">
+    <div class="card">
+        <div class="card-inner">
+            <h2>01: OPEN G SETUP</h2>
+            <p>E &rarr; D | A &rarr; G | E &rarr; D</p>
+            <div class="fretboard">
+                </div>
+            <div class="label">SWIPE &rarr;</div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-inner">
+            <h2>02: G MAJOR BARRE</h2>
+            <div class="fretboard">
+                <div class="note" style="top:0%; left:16%;"></div>
+                <div class="note" style="top:0%; left:33%;"></div>
+                <div class="note" style="top:0%; left:50%;"></div>
+                <div class="note" style="top:0%; left:66%;"></div>
+                <div class="note" style="top:0%; left:83%;"></div>
+                <div class="note" style="top:0%; left:100%;"></div>
+            </div>
+            <div class="label">ROOT POSITION</div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-inner">
+            <h2>03: C MAJOR (IV)</h2>
+            <div class="fretboard">
+                <div class="note" style="top:83%; left:16%;"></div>
+                <div class="note" style="top:83%; left:33%;"></div>
+                <div class="note" style="top:83%; left:50%;"></div>
+                <div class="note" style="top:83%; left:66%;"></div>
+                <div class="note" style="top:83%; left:83%;"></div>
+                <div class="note" style="top:83%; left:100%;"></div>
+            </div>
+            <div class="label">5th FRET SHIFT</div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
