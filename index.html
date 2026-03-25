@@ -3,318 +3,173 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>High-End Open E Slide Explorer</title>
+    <title>Open E Tuning: Custom Chord Builder</title>
     <style>
         :root {
             --primary: #2563eb; --bg: #f8fafc; --card-bg: #ffffff;
-            --text-main: #0f172a; --text-muted: #64748b;
-            --fret-color: #cbd5e1; --string-color: #475569;
-            --finger-color: #8b2e5f; /* Purple from your references */
-            --slide-highlight: #facc15; /* Yellow/Gold for slide focus */
-            --sequence-active: #a855f7; /* Purple for active licks */
+            --text-main: #0f172a; --fret-color: #cbd5e1;
+            --string-color: #475569; --finger-color: #8b2e5f;
+            --capo-color: #f59e0b;
         }
+        body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text-main); padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        .section { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); width: 100%; max-width: 600px; margin-bottom: 30px; border: 1px solid #e2e8f0; }
+        h2 { margin-top: 0; color: var(--primary); }
         
-        body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text-main); padding: 20px; display: flex; flex-direction: column; align-items: center; margin: 0; }
-
-        /* Unified Top Navigation */
-        .app-nav { display: flex; gap: 10px; margin-bottom: 25px; background: white; padding: 12px; border-radius: 99px; box-shadow: 0 4px 15px rgba(0,0,0,0.06); }
-        .nav-btn { padding: 10px 22px; border: 1px solid #e2e8f0; border-radius: 99px; cursor: pointer; font-weight: 700; background: white; color: var(--text-muted); transition: all 0.2s; }
-        .nav-btn:hover { background: #f1f5f9; color: var(--text-main); }
-        .nav-btn.active { background: var(--primary); color: white; border-color: var(--primary); box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2); }
-
-        /* --- THE NEW HIGH-END SLIDE SECTION --- */
-        .slide-module { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); width: 100%; max-width: 1300px; margin-bottom: 35px; border: 1px solid #e2e8f0; display: flex; gap: 30px; }
+        /* Creator UI */
+        .creator-container { display: flex; flex-direction: column; align-items: center; gap: 20px; }
+        .input-group { width: 100%; display: flex; gap: 10px; }
+        input { flex: 1; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; }
         
-        /* Sequence/Lick Selector (Left) */
-        .sequence-list { flex: 1; max-width: 320px; display: flex; flex-direction: column; gap: 12px; }
-        .sequence-item { background: #f8fafc; padding: 20px; border-radius: 12px; cursor: pointer; border: 2px solid transparent; transition: all 0.3s; position: relative; }
-        .sequence-item:hover { border-color: var(--primary); transform: translateX(5px); }
-        .sequence-item.active { border-color: var(--sequence-active); background: #f3e8ff; }
-        .sequence-item .chord-ref { position: absolute; top: 10px; right: 10px; font-weight: bold; font-size: 11px; color: var(--text-muted); }
-        .sequence-item h3 { margin: 0 0 5px 0; font-size: 1.1rem; color: var(--text-main); }
-        .sequence-item p { margin: 0; font-size: 0.85rem; color: var(--text-muted); line-height: 1.4; }
-
-        /* Main Fretboard Visualizer (Right) */
-        .visualizer-pane { flex: 2; display: flex; flex-direction: column; align-items: center; position: relative;}
-        #slideFB { width: 100%; height: auto; border-radius: 12px; padding: 10px; box-shadow: inset 0 2px 10px rgba(0,0,0,0.05); }
-        .fret-number { font-size: 11px; fill: var(--text-muted); font-weight: bold; }
-        
-        /* High-End Specific SVGs */
-        .fb-fret { stroke: var(--fret-color); stroke-width: 2.5; }
-        .fb-string { stroke: var(--string-color); stroke-width: 1.8; }
-        .fb-inlay { fill: #e2e8f0; } /* Subtle fret marker inlays */
-        .active-target { transition: all 0.2s; } /* Smooth movement of highlight */
-
-        /* Legacy Sections (Chords & Creator - Kept Below) */
-        .legacy-section { display: none; width: 100%; max-width: 1200px; flex-direction: column; align-items: center;}
-        .legacy-section.active { display: flex; }
-        .creator-module { background: white; padding: 25px; border-radius: 15px; width: 100%; max-width: 600px; border: 1px solid #e2e8f0; margin-bottom: 25px;}
         .interactive-fb { display: flex; gap: 15px; border: 2px solid #334155; padding: 15px; border-radius: 8px; background: #fff; }
-        .chord-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; width: 100%; max-width: 1200px; }
-        .status-btn { font-weight: bold; cursor: pointer; color: var(--primary); width: 30px; text-align: center; }
-        .fret-node { width: 30px; height: 30px; border-radius: 50%; border: 1px solid #e2e8f0; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 10px; }
+        .string-col { display: flex; flex-direction: column; gap: 8px; align-items: center; }
+        .fret-node { width: 30px; height: 30px; border-radius: 50%; border: 1px solid #e2e8f0; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 10px; transition: 0.2s; }
+        .fret-node:hover { background: #f1f5f9; }
         .fret-node.active { background: var(--finger-color); color: white; border-color: var(--finger-color); }
-        .card { background: white; border-radius: 12px; padding: 15px; border: 1px solid #e2e8f0; text-align: center; position: relative; }
-        .delete-btn { position: absolute; top: 5px; right: 5px; border: none; background: #fee2e2; color: #ef4444; border-radius: 4px; padding: 2px 6px; font-size: 10px; }
+        .status-btn { font-weight: bold; cursor: pointer; color: var(--primary); font-size: 14px; width: 30px; text-align: center; margin-bottom: 5px; }
+
+        .btn-save { background: var(--primary); color: white; border: none; padding: 12px 24px; border-radius: 8px; font-weight: 700; cursor: pointer; width: 100%; }
         
-        /* Utility */
-        .high-res-card { width: 100%; max-width: 180px;}
-        .hidden { display: none; }
+        /* Library UI */
+        .chord-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; width: 100%; max-width: 1000px; }
+        .card { background: white; border-radius: 12px; padding: 15px; border: 1px solid #e2e8f0; text-align: center; position: relative; }
+        .delete-btn { position: absolute; top: 5px; right: 5px; border: none; background: #fee2e2; color: #ef4444; border-radius: 4px; cursor: pointer; padding: 2px 6px; font-size: 10px; }
+        
+        svg { width: 100%; max-width: 140px; height: auto; }
+        .fb-string { stroke: var(--string-color); stroke-width: 1.5; }
+        .fb-fret { stroke: var(--fret-color); stroke-width: 2; }
+        .fb-nut { stroke: #334155; stroke-width: 5; }
+        .fb-label { font-size: 10px; fill: #64748b; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <div class="app-nav">
-        <button class="nav-btn active" onclick="showAppSection('slide')">Slide Visualizer</button>
-        <button class="nav-btn" onclick="showAppSection('chords')">Chord Library</button>
-        <button class="nav-btn" onclick="showAppSection('creator')">Chord Creator</button>
-    </div>
-
-    <div id="sectionSlide" class="slide-module">
-        
-        <div class="sequence-list" id="sequenceSelector">
-            <h1 style="color:var(--primary); margin: 0 0 10px 0; font-size: 1.5rem;">Pro SlideExplorer</h1>
-            <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 20px;">Click a phrase to view the slide movement roadmap. This visualizes the intervals from your performance reference. <a href="https://www.youtube.com/watch?v=KI8BcjoyFbY" target="_blank" style="color:var(--primary);">Video Ref</a>.</p>
+    <div class="section">
+        <h2>Chord Creator (Open E)</h2>
+        <div class="creator-container">
+            <div class="input-group">
+                <input type="text" id="chordNameInput" placeholder="Chord Name (e.g. E13)">
+            </div>
             
-            </div>
-        
-        <div class="visualizer-pane">
-            <h2 id="currentPhraseTitle" style="text-align: center; margin: 0 0 15px 0; color:var(--text-main);">Phrase Visualization</h2>
-            <div id="slideFB_Container">
-                <svg id="slideFB" viewBox="0 0 1000 280">
-                    </svg>
-            </div>
-            <p id="currentPhraseDesc" style="font-size: 0.9rem; color: var(--text-muted); text-align: center; max-width: 600px; margin-top: 15px;"></p>
+            <div class="interactive-fb" id="creatorFB">
+                </div>
+            
+            <p style="font-size: 0.8rem; color: #64748b;">Click frets to place fingers. Click top 'O' to toggle 'X' (Mute).</p>
+            <button class="btn-save" onclick="saveChord()">Save to Library</button>
         </div>
-        
     </div>
 
-    <div id="sectionChords" class="legacy-section">
+    <div style="width: 100%; max-width: 1000px;">
         <h2 style="text-align: center;">My Custom Library</h2>
         <div id="libraryGrid" class="chord-grid"></div>
     </div>
 
-    <div id="sectionCreator" class="legacy-section">
-        <div class="creator-module">
-            <h2>Chord Creator (Open E)</h2>
-            <div style="width: 100%; display: flex; gap: 10px; margin-bottom: 15px;">
-                <input type="text" id="chordNameInput" placeholder="Chord Name (e.g. E13)">
-            </div>
-            <div class="interactive-fb" id="creatorFB"></div>
-            <button style="margin-top: 15px; background:var(--primary); color:white; width:100%; border:none; padding:12px; font-weight:bold; border-radius:6px;" onclick="saveChord()">Save</button>
-        </div>
-    </div>
-
     <script>
-        const TUNING_LABELS = ['E','B','E','G#','B','E'];
-        
-        // --- SLIDE DATA (Synthesized from your PDF reference - not standard notation) ---
-        const SLIDE_PHRASES = [
-            { 
-                id: "phrase1", 
-                title: "Opening Pentatonic Run", 
-                desc: "FIGURE 1: A core descending lick. The slide targets the main E-root positions, then dynamically shifts to the 3rd and 5th intervals. The visualizer highlights the 'Target Notes'.",
-                chordRef: "E Minor",
-                sequences: [
-                    { string: 5, frets: [3, 0] },     // E -> G (3rd) -> E (Open)
-                    { string: 4, frets: [3, 0] },     // B -> D (minor 7th) -> B (Open)
-                    { string: 3, frets: [3, 0] },     // E -> G (3rd) -> E (Open)
-                    { string: 2, frets: [1, 0, 3, 5] }, // G# -> A(4th) -> G#(Open) -> B(5th) -> C#(6th)
-                    { string: 1, frets: [3, 5] },     // B -> D (7th) -> B (Open)
-                ]
-            },
-            { 
-                id: "phrase2", 
-                title: "Figure 3: High-Neck Glide", 
-                desc: "FIGURE 3: Moving high up the neck. This utilizes the 12th fret root cluster and the surrounding 10th fret cluster for beautiful, minor-blues movement. Note the consistent glide between the 12th and 10th frets.",
-                chordRef: "E",
-                sequences: [
-                    { string: 0, frets: [12, 10] }, // High E glide
-                    { string: 1, frets: [12, 10] }, // B glide
-                    { string: 2, frets: [12, 10, 9] }, // E glide -> D#(Maj7) - common blues movement
-                ]
-            },
-            {
-                id: "phrase3",
-                title: "Figure 4: A7 into E7",
-                desc: "FIGURE 4: A clear blues changes lick. Slides up from G Major (fret 3) to the IV chord (A at fret 5), then glides to the V chord (B at fret 7) before resolving back to E. The highlights follow the root note progression.",
-                chordRef: "IV -> V -> I",
-                sequences: [
-                    { string: 0, frets: [3, 5, 7, 12] }, // Following the blues changes: G -> A -> B -> E (12)
-                ]
-            }
-        ];
-
-        // --- CORE UI MANAGEMENT ---
-        function showAppSection(sectionId) {
-            // Update Navigation
-            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
-            event.target.classList.add('active');
-
-            // Hide/Show Content
-            document.querySelectorAll('.slide-module, .legacy-section').forEach(sec => sec.classList.remove('active'));
-            document.getElementById('section' + sectionId.charAt(0).toUpperCase() + sectionId.slice(1)).classList.add('active');
-
-            // Optional: Re-render if necessary
-            if (sectionId === 'slide') initSlideVisualizer();
-        }
-
-        // --- SLIDE VISUALIZER ENGINE ---
-        function initSlideVisualizer() {
-            // 1. Populate Selector List
-            const selector = document.getElementById('sequenceSelector');
-            // Clear existing but keep the header
-            const header = selector.querySelector('h1');
-            const intro = selector.querySelector('p');
-            selector.innerHTML = ''; selector.appendChild(header); selector.appendChild(intro);
-
-            SLIDE_PHRASES.forEach((phrase, idx) => {
-                const item = document.createElement('div');
-                item.className = 'sequence-item';
-                item.onclick = () => activatePhrase(phrase.id, item);
-                item.innerHTML = `
-                    <div class="chord-ref">${phrase.chordRef}</div>
-                    <h3>${phrase.title}</h3>
-                    <p>${phrase.desc.substring(0, 70)}...</p>
-                `;
-                selector.appendChild(item);
-            });
-
-            // 2. Render Base Fretboard (Large, high-end look)
-            drawBaseFretboard();
-
-            // 3. Activate First Phrase
-            activatePhrase(SLIDE_PHRASES[0].id, selector.querySelector('.sequence-item'));
-        }
-
-        function drawBaseFretboard() {
-            const svg = document.getElementById('slideFB');
-            svg.innerHTML = ''; // Clear existing highlights
-
-            const width = 1000, height = 280, margin = {t: 40, r: 20, b: 40, l: 50};
-            const stringCount = 6, fretCount = 15;
-            const sh = (height - margin.t - margin.b) / (stringCount - 1);
-            const fw = (width - margin.l - margin.r) / (fretCount);
-
-            // 1. Fret Lines (Vertical) & Numbers
-            for(let i=0; i<=fretCount; i++) {
-                const x = margin.l + (i * fw);
-                // The Fret Line
-                svg.innerHTML += `<line x1="${x}" y1="${margin.t}" x2="${x}" y2="${height-margin.b}" class="fb-fret" />`;
-                // Inlay Dots (Standard Fret Markers: 3, 5, 7, 9, 12, 15)
-                if ([3, 5, 7, 9, 12, 15].includes(i)) {
-                    const inlayY = margin.t + (3 * sh) - (sh/2); // Center of the fretboard
-                    if (i === 12) {
-                        // Double dot at 12
-                        svg.innerHTML += `<circle cx="${x - (fw/2)}" cy="${inlayY - sh}" r="5" class="fb-inlay" />`;
-                        svg.innerHTML += `<circle cx="${x - (fw/2)}" cy="${inlayY + sh}" r="5" class="fb-inlay" />`;
-                    } else {
-                        svg.innerHTML += `<circle cx="${x - (fw/2)}" cy="${inlayY}" r="5" class="fb-inlay" />`;
-                    }
-                }
-                // Fret Number (Below)
-                if(i > 0) svg.innerHTML += `<text x="${x - (fw/2)}" y="${height-10}" class="fret-number" text-anchor="middle">${i}</text>`;
-            }
-
-            // 2. Strings (Horizontal) & Labels
-            TUNING_LABELS.forEach((note, sIdx) => {
-                const y = margin.t + (sIdx * sh);
-                // String Label (Left)
-                svg.innerHTML += `<text x="${margin.l-15}" y="${y}" class="fb-label" text-anchor="end" alignment-baseline="central">${note}</text>`;
-                // The String
-                svg.innerHTML += `<line x1="${margin.l}" y1="${y}" x2="${width-margin.r}" y2="${y}" class="fb-string" stroke-width="${1 + (sIdx/2.5)}" />`; // Tapered strings
-            });
-
-            // 3. "The Nut" (Thick starting line)
-            svg.innerHTML += `<line x1="${margin.l}" y1="${margin.t}" x2="${margin.l}" y2="${height-margin.b}" stroke="#000" stroke-width="8" stroke-linecap="round" />`;
-        }
-
-        function activatePhrase(phraseId, el) {
-            // Update active state in list
-            document.querySelectorAll('.sequence-item').forEach(item => item.classList.remove('active'));
-            el.classList.add('active');
-
-            const phrase = SLIDE_PHRASES.find(p => p.id === phraseId);
-            document.getElementById('currentPhraseTitle').innerText = phrase.title;
-            document.getElementById('currentPhraseDesc').innerText = phrase.desc;
-
-            // Clear existing highlights
-            const svg = document.getElementById('slideFB');
-            document.querySelectorAll('.active-target').forEach(e => e.remove());
-
-            // Render Dynamic Heatmap for the Phrase
-            drawPhraseHeatmap(phrase.sequences);
-        }
-
-        function drawPhraseHeatmap(sequences) {
-            const svg = document.getElementById('slideFB');
-            const width = 1000, height = 280, margin = {t: 40, r: 20, b: 40, l: 50};
-            const sh = (height - margin.t - margin.b) / (5);
-            const fw = (width - margin.l - margin.r) / (15);
-
-            sequences.forEach(seq => {
-                // We are visualizing the movement Roadmap. 
-                // Render small connecting lines and large highlights.
-                
-                seq.frets.forEach((fret, fIdx) => {
-                    const sIdx = seq.string; // (SVG renders top-down, but guitar strings are bottom-up, handled here)
-                    
-                    const x = margin.l + (fret * fw) - (fw / 2); // Center of the fret window
-                    const y = margin.t + (sIdx * sh);
-
-                    // Add a large "Heatmap Highlight" (Slide Target Zone)
-                    const circle = `<circle cx="${x}" cy="${y}" r="${(sIdx < 2 ? 16 : 12)}" fill="var(--slide-highlight)" opacity="0.4" class="active-target" />`;
-                    svg.innerHTML += circle;
-
-                    // Add Note Labels inside the targets (High End touch)
-                    const note = `<text x="${x}" y="${y}" font-size="10" font-weight="bold" fill="#000" text-anchor="middle" alignment-baseline="central" class="active-target">${fret}</text>`;
-                    svg.innerHTML += note;
-
-                    // Visualize GLIDE/MOVEMENT between notes in a sequence (the uniques 'slide' aspect)
-                    if (fIdx > 0) {
-                        const prevFret = seq.frets[fIdx - 1];
-                        const prevX = margin.l + (prevFret * fw) - (fw / 2);
-                        const glide = `<line x1="${prevX}" y1="${y}" x2="${x}" y2="${y}" stroke="var(--sequence-active)" stroke-width="3" stroke-dasharray="8 5" class="active-target" opacity="0.6"/>`;
-                        svg.innerHTML += glide;
-                    }
-                });
-            });
-        }
-
-        // --- LEGACY CHORD CREATOR (Persisted below) ---
-        let currentCreatorSelection = [0,0,0,0,0,0]; 
+        const STRINGS = ['E','B','E','G#','B','E'];
+        let currentSelection = [0,0,0,0,0,0]; // 0=Open, -1=Muted, 1+=Fret
         let savedLibrary = JSON.parse(localStorage.getItem('openE_Library')) || [];
 
-        function initCreatorFB() {
+        // Initialize Creator
+        function initCreator() {
             const fb = document.getElementById('creatorFB');
             fb.innerHTML = '';
             
-            TUNING_LABELS.forEach((note, sIdx) => {
+            STRINGS.forEach((note, sIdx) => {
                 const col = document.createElement('div');
-                col.className = 'string-col' + (sIdx < 2 ? ' fb-string-thick' : '');
-                col.style.display = 'flex'; col.style.flexDirection = 'column'; col.style.alignItems = 'center'; col.style.gap = '8px';
+                col.className = 'string-col';
                 
+                // Status Toggle (O/X)
                 const status = document.createElement('div');
                 status.className = 'status-btn';
-                status.innerText = currentCreatorSelection[sIdx] === -1 ? 'X' : (currentCreatorSelection[sIdx] === 0 ? 'O' : '•');
-                status.onclick = () => { currentCreatorSelection[sIdx] = (currentCreatorSelection[sIdx] === 0 ? -1 : 0); initCreatorFB(); };
+                status.innerText = currentSelection[sIdx] === -1 ? 'X' : (currentSelection[sIdx] === 0 ? 'O' : '•');
+                status.onclick = () => toggleStatus(sIdx);
                 col.appendChild(status);
 
+                // Fret Nodes (1-5)
                 for(let f=1; f<=5; f++) {
                     const node = document.createElement('div');
-                    node.className = `fret-node ${currentCreatorSelection[sIdx] === f ? 'active' : ''}`;
+                    node.className = `fret-node ${currentSelection[sIdx] === f ? 'active' : ''}`;
                     node.innerText = f;
-                    node.onclick = () => { currentCreatorSelection[sIdx] = (currentCreatorSelection[sIdx] === f ? 0 : f); initCreatorFB(); };
+                    node.onclick = () => selectFret(sIdx, f);
                     col.appendChild(node);
                 }
+                
+                const label = document.createElement('div');
+                label.style.fontSize = '12px'; label.style.fontWeight = 'bold';
+                label.innerText = note;
+                col.appendChild(label);
+                
                 fb.appendChild(col);
             });
         }
 
-        // Initialize App on load
-        initSlideVisualizer();
-        initCreatorFB();
+        function toggleStatus(sIdx) {
+            if (currentSelection[sIdx] === 0) currentSelection[sIdx] = -1;
+            else currentSelection[sIdx] = 0;
+            initCreator();
+        }
 
+        function selectFret(sIdx, f) {
+            if (currentSelection[sIdx] === f) currentSelection[sIdx] = 0;
+            else currentSelection[sIdx] = f;
+            initCreator();
+        }
+
+        function saveChord() {
+            const name = document.getElementById('chordNameInput').value || "Unnamed Chord";
+            savedLibrary.push({ name, p: [...currentSelection] });
+            localStorage.setItem('openE_Library', JSON.stringify(savedLibrary));
+            renderLibrary();
+            // Reset
+            currentSelection = [0,0,0,0,0,0];
+            document.getElementById('chordNameInput').value = '';
+            initCreator();
+        }
+
+        function deleteChord(idx) {
+            savedLibrary.splice(idx, 1);
+            localStorage.setItem('openE_Library', JSON.stringify(savedLibrary));
+            renderLibrary();
+        }
+
+        function renderLibrary() {
+            const grid = document.getElementById('libraryGrid');
+            grid.innerHTML = '';
+            savedLibrary.forEach((chord, idx) => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.innerHTML = `
+                    <button class="delete-btn" onclick="deleteChord(${idx})">DEL</button>
+                    <div style="font-weight:bold; margin-bottom:10px;">${chord.name}</div>
+                    ${drawSVG(chord.p)}
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function drawSVG(p) {
+            const width = 200, height = 240, margin = {t: 30, r: 20, b: 30, l: 30};
+            const sw = (width - margin.l - margin.r) / 5;
+            const fh = (height - margin.t - margin.b) / 5;
+            let svg = `<svg viewBox="0 0 ${width} ${height}">`;
+            for(let i=0; i<=5; i++) {
+                const y = margin.t + (i * fh);
+                svg += `<line x1="${margin.l}" y1="${y}" x2="${width-margin.r}" y2="${y}" class="${i===0?'fb-nut':'fb-fret'}" stroke="${i===0?'#000':'#cbd5e1'}" stroke-width="${i===0?4:2}" />`;
+            }
+            p.forEach((pos, i) => {
+                const x = margin.l + (i * sw);
+                svg += `<line x1="${x}" y1="${margin.t}" x2="${x}" y2="${height-margin.b}" stroke="#475569" stroke-width="1.5" />`;
+                if(pos === -1) svg += `<text x="${x}" y="${margin.t-10}" font-size="12" text-anchor="middle" fill="red">X</text>`;
+                else if(pos === 0) svg += `<circle cx="${x}" cy="${margin.t-10}" r="4" fill="none" stroke="#64748b" />`;
+                else {
+                    const y = margin.t + (pos * fh) - (fh/2);
+                    svg += `<circle cx="${x}" cy="${y}" r="8" fill="#8b2e5f" />`;
+                }
+            });
+            return svg + `</svg>`;
+        }
+
+        initCreator();
+        renderLibrary();
     </script>
 </body>
 </html>
