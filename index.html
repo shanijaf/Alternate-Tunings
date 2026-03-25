@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Open E Cloud - Capo 2 Edition</title>
+    <title>Open E Cloud - Capo 2nd Fret</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
@@ -23,7 +23,7 @@
 
         svg { width: 100%; max-width: 160px; height: auto; }
         .fb-fret { stroke: #cbd5e1; stroke-width: 2; }
-        .fb-nut { stroke: var(--capo); stroke-width: 6; } /* Capo highlighted at nut position */
+        .fb-nut { stroke: var(--capo); stroke-width: 6; }
     </style>
 </head>
 <body>
@@ -31,7 +31,6 @@
     <div class="header-box">
         <h1 style="margin-bottom: 5px;">Open E Cloud</h1>
         <span class="capo-badge">CAPO 2ND FRET ACTIVE</span>
-        <p style="color: #64748b; font-size: 0.9rem; margin-top: 15px;">A custom library synthesized from your Joni Mitchell references and blues tabs[cite: 4, 20].</p>
     </div>
 
     <div id="printArea" class="chord-grid">
@@ -42,21 +41,19 @@
     </div>
 
     <script>
-        // Library synthesized from provided Joni Mitchell PDF [cite: 4] and Blues Images [cite: 14]
-        // Note: Chord names are adjusted for the +2 semitone Capo shift
+        // Exact chord data maintained from previous session [cite: 1, 2, 4]
         const cloudLibrary = [
-            { name: "F# Major (Open E Shape)", p: [0,0,0,0,0,0] },
-            { name: "B7 (Shape) / C#7", p: [-1,-1,0,1,2,3] },
+            { name: "F# Major", p: [0,0,0,0,0,0] },
+            { name: "C#7 (Shape 1)", p: [-1,-1,0,1,2,3] },
             { name: "F#maj7", p: [0,0,1,1,1,0] },
-            { name: "B(9) / C#(9)", p: [0,0,2,1,2,0] },
+            { name: "C#(9)", p: [0,0,2,1,2,0] },
             { name: "G#m11", p: [2,0,1,0,0,0] },
             { name: "C#7sus/D#", p: [0,4,2,2,0,0] },
-            { name: "C#7 (Blues Box)", p: [-1,-1,3,3,4,5] },
-            { name: "A Major / B Major", p: [5,5,5,5,5,5] }
+            { name: "C#7 (Shape 2)", p: [-1,-1,3,3,4,5] },
+            { name: "B Major", p: [5,5,5,5,5,5] }
         ];
 
         function renderGrid() {
-            const grid = document.getElementById('chordGrid');
             const container = document.getElementById('printArea');
             container.innerHTML = '';
             
@@ -77,12 +74,11 @@
             const fh = (height - 2*m) / 5;
             let svg = `<svg viewBox="0 0 ${width} ${height}">`;
             
-            // Frets
             for(let i=0; i<=5; i++) {
                 const y = m + (i * fh);
                 const isCapo = i === 0;
                 svg += `<line x1="${m}" y1="${y}" x2="${width-m}" y2="${y}" class="${isCapo?'fb-nut':'fb-fret'}" stroke-linecap="round" />`;
-                if (i > 0) svg += `<text x="${m-12}" y="${y-(fh/2)}" font-size="10" fill="#94a3b8">${i+2}</text>`; // Reflects capo at fret 2
+                if (i > 0) svg += `<text x="${m-12}" y="${y-(fh/2)}" font-size="10" fill="#94a3b8">${i+2}</text>`;
             }
 
             p.forEach((pos, i) => {
@@ -92,7 +88,7 @@
                 if(pos === -1) {
                     svg += `<text x="${x}" y="${m-12}" font-size="14" font-weight="bold" text-anchor="middle" fill="#ef4444">X</text>`;
                 } else if(pos === 0) {
-                    svg += `<circle cx="${x}" cy="${m-12}" r="5" fill="none" stroke="#f59e0b" stroke-width="2" />`; // Capo color for open strings
+                    svg += `<circle cx="${x}" cy="${m-12}" r="5" fill="none" stroke="#f59e0b" stroke-width="2" />`;
                 } else {
                     const y = m + (pos * fh) - (fh/2);
                     svg += `<circle cx="${x}" cy="${y}" r="9" fill="#8b2e5f" />`;
@@ -110,9 +106,9 @@
             const pdfWidth = doc.internal.pageSize.getWidth();
             const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
             
-            doc.text("Open E Cloud - Capo 2nd Fret", 15, 15);
-            doc.addImage(imgData, 'PNG', 0, 20, pdfWidth, pdfHeight);
-            doc.save('Open_E_Cloud_Capo2.pdf');
+            doc.text("Open E Cloud - Capo 2nd Fret", 15, 10);
+            doc.addImage(imgData, 'PNG', 0, 15, pdfWidth, pdfHeight);
+            doc.save('Open_E_Cloud.pdf');
         }
 
         renderGrid();
