@@ -3,119 +3,143 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Open E Cloud - Capo 2nd Fret</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <title>Open E Alternate Tuning Trainer</title>
     <style>
-        :root { --primary: #0284c7; --bg: #f8fafc; --card: #ffffff; --text: #0f172a; --finger: #8b2e5f; --capo: #f59e0b; }
-        body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        :root { --wood: #3e2723; --string: #ced4da; --inlay: #e9ecef; --highlight: #ffc107; --root: #ef4444; }
+        body { font-family: 'Segoe UI', sans-serif; background: #1a1a1a; color: white; display: flex; flex-direction: column; align-items: center; padding: 20px; }
         
-        .header-box { text-align: center; margin-bottom: 30px; }
-        .capo-badge { background: var(--capo); color: white; padding: 4px 12px; border-radius: 99px; font-weight: bold; font-size: 0.8rem; }
-        
-        .chord-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 25px; width: 100%; max-width: 1000px; background: white; padding: 30px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
-        .chord-card { text-align: center; padding: 15px; border: 1px solid #f1f5f9; border-radius: 8px; position: relative; }
-        
-        .controls { margin-top: 30px; display: flex; gap: 15px; }
-        .btn { padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; font-weight: 700; transition: 0.2s; }
-        .btn-pdf { background: #10b981; color: white; }
-        .btn-pdf:hover { background: #059669; }
+        .dashboard { background: #2d2d2d; padding: 20px; border-radius: 12px; margin-bottom: 20px; display: flex; gap: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        select, button { padding: 10px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; }
+        .score-box { font-size: 24px; color: var(--highlight); }
 
-        svg { width: 100%; max-width: 160px; height: auto; }
-        .fb-fret { stroke: #cbd5e1; stroke-width: 2; }
-        .fb-nut { stroke: var(--capo); stroke-width: 6; }
+        .fretboard-container { position: relative; background: var(--wood); padding: 20px 0; border-radius: 4px; border-left: 15px solid #222; overflow-x: auto; width: 100%; max-width: 1000px; }
+        .fretboard { display: grid; grid-template-rows: repeat(6, 35px); position: relative; min-width: 800px; }
+        .string { position: relative; display: flex; align-items: center; border-bottom: 1px solid #555; }
+        .string::after { content: ''; position: absolute; width: 100%; height: var(--th); background: var(--string); box-shadow: 0 2px 2px rgba(0,0,0,0.5); z-index: 1; }
+        
+        .fret { flex: 1; position: relative; display: flex; align-items: center; justify-content: center; border-right: 4px solid #888; z-index: 2; cursor: pointer; height: 100%; }
+        .note-marker { width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 900; color: black; background: white; visibility: hidden; z-index: 3; transition: 0.2s; border: 2px solid #333; }
+        .note-marker.visible { visibility: visible; }
+        .note-marker.root { background: var(--root); color: white; }
+        .note-marker.scale { background: var(--highlight); }
+        
+        .string-label { position: absolute; left: -40px; width: 30px; text-align: center; font-weight: bold; color: var(--highlight); }
     </style>
 </head>
 <body>
 
-    <div class="header-box">
-        <h1 style="margin-bottom: 5px;">Open E Cloud</h1>
-        <span class="capo-badge">CAPO 2ND FRET ACTIVE</span>
-    </div>
-
-    <div id="printArea" class="chord-grid">
+    <div class="dashboard">
+        <div>
+            <label>Mode:</label>
+            <select id="viewMode" onchange="updateFretboard()">
+                <option value="all">Show All Notes</option>
+                <option value="major">E Major Scale</option>
+                <option value="blues">E Blues Scale</option>
+                <option value="quiz">Fretboard Quiz</option>
+            </select>
         </div>
-
-    <div class="controls">
-        <button class="btn btn-pdf" onclick="generatePDF()">Download "Open E Cloud" PDF</button>
+        <div class="score-box">Score: <span id="score">0</span></div>
+        <button onclick="resetQuiz()">New Quiz Note</button>
     </div>
+
+    <div class="fretboard-container">
+        <div id="fretboard" class="fretboard"></div>
+    </div>
+
+    <h3 id="targetNoteDisplay" style="color: var(--highlight)"></h3>
 
     <script>
-        // Exact coordinate mapping from the uploaded PDF/PNG visual patterns
-        const cloudLibrary = [
-            { name: "B7sus", p: [0, 2, 1, 0, 0, 0] },     // [cite: 372]
-            { name: "Blank", p: [0, 0, 2, 1, 2, 0] },     // [cite: 378]
-            { name: "E", p: [0, 0, 0, 0, 0, 0] },         // [cite: 371]
-            { name: "G", p: [3, 0, 0, 0, 0, 3] },         // [cite: 374]
-            { name: "B7", p: [0, 2, 0, 1, 0, 0] },        // [cite: 365]
-            { name: "B", p: [0, 2, 0, 0, 0, 0] },         // [cite: 367]
-            { name: "A(9)", p: [0, 0, 2, 1, 0, 0] },      // [cite: 355]
-            { name: "B7sus/C#", p: [0, 4, 2, 2, 0, 0] },  // [cite: 361]
-            { name: "Emaj7", p: [0, 0, 0, 0, 2, 3] },     // [cite: 354]
-            { name: "Bm11", p: [0, 2, 0, 4, 0, 0] },      // [cite: 360]
-            { name: "A7 (Blues)", p: [-1, -1, 0, 1, 2, 3] }, // From open_e_a7.png
-            { name: "B7 (Blues)", p: [-1, -1, 3, 3, 4, 5] }  // From open_e_b7.png
-        ];
+        const NOTES = ["E", "F", "F#", "G", "G#", "A", "A#", "B", "C", "C#", "D", "D#"];
+        // OPEN E TUNING: E2 - B2 - E3 - G#3 - B3 - E4
+        const OPEN_E = [0, 7, 4, 8, 7, 0]; // Note offsets relative to E
+        const E_MAJOR = ["E", "F#", "G#", "A", "B", "C#", "D#"];
+        const E_BLUES = ["E", "G", "A", "A#", "B", "D"];
+        
+        let score = 0;
+        let targetNote = "";
 
-        function renderGrid() {
-            const container = document.getElementById('printArea');
-            container.innerHTML = '';
+        function createFretboard() {
+            const board = document.getElementById('fretboard');
+            board.innerHTML = '';
             
-            cloudLibrary.forEach(chord => {
-                const card = document.createElement('div');
-                card.className = 'chord-card';
-                card.innerHTML = `
-                    <div style="font-weight:bold; font-size:1.1rem; margin-bottom:5px;">${chord.name}</div>
-                    ${drawSVG(chord.p)}
-                `;
-                container.appendChild(card);
-            });
-        }
+            // Strings from High E to Low E
+            const tuning = [0, 7, 8, 4, 7, 0]; 
+            const labels = ["E", "B", "G#", "E", "B", "E"];
+            const thickness = ["1px", "1.5px", "2px", "2.5px", "3px", "4px"];
 
-        function drawSVG(p) {
-            const width = 200, height = 240, m = 35;
-            const sw = (width - 2*m) / 5;
-            const fh = (height - 2*m) / 5;
-            let svg = `<svg viewBox="0 0 ${width} ${height}">`;
-            
-            for(let i=0; i<=5; i++) {
-                const y = m + (i * fh);
-                const isCapo = i === 0;
-                svg += `<line x1="${m}" y1="${y}" x2="${width-m}" y2="${y}" class="${isCapo?'fb-nut':'fb-fret'}" stroke-linecap="round" />`;
-                if (i > 0) svg += `<text x="${m-12}" y="${y-(fh/2)}" font-size="10" fill="#94a3b8">${i+2}</text>`;
-            }
-
-            p.forEach((pos, i) => {
-                const x = m + (i * sw);
-                svg += `<line x1="${x}" y1="${m}" x2="${x}" y2="${height-m}" stroke="#475569" stroke-width="1.5" />`;
+            tuning.forEach((offset, sIdx) => {
+                const stringDiv = document.createElement('div');
+                stringDiv.className = 'string';
+                stringDiv.style.setProperty('--th', thickness[sIdx]);
                 
-                if(pos === -1) {
-                    svg += `<text x="${x}" y="${m-12}" font-size="14" font-weight="bold" text-anchor="middle" fill="#ef4444">X</text>`;
-                } else if(pos === 0) {
-                    svg += `<circle cx="${x}" cy="${m-12}" r="5" fill="none" stroke="#f59e0b" stroke-width="2" />`;
-                } else {
-                    const y = m + (pos * fh) - (fh/2);
-                    svg += `<circle cx="${x}" cy="${y}" r="9" fill="#8b2e5f" />`;
-                    svg += `<text x="${x}" y="${y}" fill="white" font-size="8" font-weight="bold" text-anchor="middle" alignment-baseline="central">${pos}</text>`;
+                const label = document.createElement('div');
+                label.className = 'string-label';
+                label.innerText = labels[sIdx];
+                stringDiv.appendChild(label);
+
+                for (let f = 0; f <= 15; f++) {
+                    const noteIdx = (offset + f) % 12;
+                    const noteName = NOTES[noteIdx];
+                    
+                    const fret = document.createElement('div');
+                    fret.className = 'fret';
+                    fret.onclick = () => handleFretClick(noteName);
+                    
+                    const marker = document.createElement('div');
+                    marker.className = 'note-marker';
+                    marker.innerText = noteName;
+                    marker.id = `n-${sIdx}-${f}`;
+                    if (noteName === "E") marker.classList.add('root');
+                    
+                    fret.appendChild(marker);
+                    stringDiv.appendChild(fret);
                 }
+                board.appendChild(stringDiv);
             });
-            return svg + `</svg>`;
+            updateFretboard();
         }
 
-        async function generatePDF() {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF('p', 'mm', 'a4');
-            const canvas = await html2canvas(document.getElementById('printArea'), { scale: 2 });
-            const imgData = canvas.toDataURL('image/png');
-            const pdfWidth = doc.internal.pageSize.getWidth();
-            const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+        function updateFretboard() {
+            const mode = document.getElementById('viewMode').value;
+            const markers = document.querySelectorAll('.note-marker');
             
-            doc.text("Open E Cloud - Capo 2nd Fret", 15, 10);
-            doc.addImage(imgData, 'PNG', 0, 15, pdfWidth, pdfHeight);
-            doc.save('Open_E_Cloud.pdf');
+            markers.forEach(m => {
+                const note = m.innerText;
+                m.classList.remove('visible', 'scale');
+                
+                if (mode === 'all') m.classList.add('visible');
+                else if (mode === 'major' && E_MAJOR.includes(note)) {
+                    m.classList.add('visible', 'scale');
+                    if (note === "E") m.classList.add('root');
+                }
+                else if (mode === 'blues' && E_BLUES.includes(note)) {
+                    m.classList.add('visible', 'scale');
+                }
+                else if (mode === 'quiz') m.classList.remove('visible');
+            });
         }
 
-        renderGrid();
+        function resetQuiz() {
+            targetNote = NOTES[Math.floor(Math.random() * NOTES.length)];
+            document.getElementById('targetNoteDisplay').innerText = `Find all: ${targetNote}`;
+            document.getElementById('viewMode').value = 'quiz';
+            updateFretboard();
+        }
+
+        function handleFretClick(note) {
+            if (document.getElementById('viewMode').value !== 'quiz') return;
+            
+            if (note === targetNote) {
+                score += 10;
+                document.getElementById('score').innerText = score;
+                // Flash green or add sound logic here
+            } else {
+                score = Math.max(0, score - 5);
+                document.getElementById('score').innerText = score;
+            }
+        }
+
+        createFretboard();
     </script>
 </body>
 </html>
