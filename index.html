@@ -2,106 +2,175 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Shift Theory: Open G</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Open D Tuning Chord Explorer</title>
     <style>
         :root {
-            --bg: #0d1117;
-            --card-bg: #161b22;
-            --cyan: #00f2ff;
-            --amber: #ff9d00;
-            --text: #c9d1d9;
+            --primary: #2563eb;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #1e293b;
         }
 
         body {
-            margin: 0; background: var(--bg); color: var(--text);
-            font-family: 'Courier New', Courier, monospace; overflow: hidden;
+            font-family: system-ui, -apple-system, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
 
-        /* The Swipe Container */
-        .deck {
-            display: flex; overflow-x: auto; scroll-snap-type: x mandatory;
-            height: 100vh; width: 100vw; -webkit-overflow-scrolling: touch;
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
         }
 
-        .card {
-            flex: 0 0 100vw; height: 100vh; scroll-snap-align: start;
-            display: flex; flex-direction: column; align-items: center;
-            justify-content: center; box-sizing: border-box; padding: 20px;
+        .tuning-info {
+            background: #e2e8f0;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            margin-bottom: 20px;
         }
 
-        .card-inner {
-            background: var(--card-bg); border: 2px solid var(--cyan);
-            border-radius: 15px; width: 90%; max-width: 400px;
-            height: 70%; position: relative; padding: 20px;
-            box-shadow: 0 0 20px rgba(0, 242, 255, 0.2);
+        .chord-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            width: 100%;
+            max-width: 1000px;
         }
 
-        h2 { color: var(--cyan); text-transform: uppercase; font-size: 1.2rem; margin-top: 0; }
-        
-        /* The Fretboard Grid */
+        .chord-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            transition: transform 0.2s;
+            border: 1px solid #e2e8f0;
+        }
+
+        .chord-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .chord-name {
+            font-size: 1.5rem;
+            font-weight: 800;
+            margin-bottom: 10px;
+            color: var(--primary);
+            text-align: center;
+        }
+
+        /* Fretboard Graph Styling */
         .fretboard {
-            display: grid; grid-template-columns: repeat(6, 1fr);
-            grid-template-rows: repeat(6, 1fr); height: 70%;
-            border: 1px solid #30363d; margin-top: 20px; position: relative;
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            grid-template-rows: repeat(5, 30px);
+            border: 2px solid #334155;
+            position: relative;
+            background: #fff;
         }
 
-        .string { border-right: 1px solid #484f58; height: 100%; position: relative; }
-        .fret { border-bottom: 2px solid #8b949e; height: 100%; width: 100%; }
-
-        /* Note Markers */
-        .note {
-            width: 20px; height: 20px; background: var(--amber);
-            border-radius: 50%; position: absolute; transform: translate(-50%, -50%);
-            box-shadow: 0 0 10px var(--amber); z-index: 10;
+        .fret-line {
+            border-bottom: 1px solid #cbd5e1;
+            grid-column: 1 / span 6;
         }
 
-        .label { position: absolute; bottom: 20px; font-size: 0.8rem; color: #8b949e; }
+        .string {
+            border-right: 1px solid #94a3b8;
+            height: 100%;
+            position: relative;
+        }
+
+        .string:last-child { border-right: none; }
+
+        .dot {
+            width: 18px;
+            height: 18px;
+            background: var(--primary);
+            border-radius: 50%;
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2;
+        }
+
+        .open-marker {
+            text-align: center;
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
     </style>
 </head>
 <body>
 
-<div class="deck">
-    <div class="card">
-        <div class="card-inner">
-            <h2>01: OPEN G SETUP</h2>
-            <p>E &rarr; D | A &rarr; G | E &rarr; D</p>
-            <div class="fretboard">
-                </div>
-            <div class="label">SWIPE &rarr;</div>
-        </div>
+    <div class="header">
+        <h1>Open D Explorer</h1>
+        <div class="tuning-info">D - A - D - F# - A - D</div>
+        <p>Common chord shapes for Open D tuning.</p>
     </div>
 
-    <div class="card">
-        <div class="card-inner">
-            <h2>02: G MAJOR BARRE</h2>
-            <div class="fretboard">
-                <div class="note" style="top:0%; left:16%;"></div>
-                <div class="note" style="top:0%; left:33%;"></div>
-                <div class="note" style="top:0%; left:50%;"></div>
-                <div class="note" style="top:0%; left:66%;"></div>
-                <div class="note" style="top:0%; left:83%;"></div>
-                <div class="note" style="top:0%; left:100%;"></div>
-            </div>
-            <div class="label">ROOT POSITION</div>
+    <div class="chord-grid" id="chordGrid">
         </div>
-    </div>
 
-    <div class="card">
-        <div class="card-inner">
-            <h2>03: C MAJOR (IV)</h2>
-            <div class="fretboard">
-                <div class="note" style="top:83%; left:16%;"></div>
-                <div class="note" style="top:83%; left:33%;"></div>
-                <div class="note" style="top:83%; left:50%;"></div>
-                <div class="note" style="top:83%; left:66%;"></div>
-                <div class="note" style="top:83%; left:83%;"></div>
-                <div class="note" style="top:83%; left:100%;"></div>
-            </div>
-            <div class="label">5th FRET SHIFT</div>
-        </div>
-    </div>
-</div>
+    <script>
+        const chords = [
+            { name: "D Major", positions: [0, 0, 0, 0, 0, 0], type: "Open" },
+            { name: "G Major", positions: [5, 5, 5, 5, 5, 5], type: "Barre" },
+            { name: "A Major", positions: [7, 7, 7, 7, 7, 7], type: "Barre" },
+            { name: "Bm (Relative Minor)", positions: [0, 2, 0, 0, 2, 0], type: "Shape" },
+            { name: "D7", positions: [0, 0, 0, 1, 0, 0], type: "Dominant" },
+            { name: "G/D", positions: [0, 2, 0, 1, 2, 0], type: "V-Shape" }
+        ];
 
+        function createChordCard(chord) {
+            const card = document.createElement('div');
+            card.className = 'chord-card';
+            
+            let fretboardHTML = '<div class="fretboard">';
+            // Create 4 frets
+            for (let f = 0; f < 4; f++) {
+                fretboardHTML += '<div class="fret-line" style="grid-row: ' + (f + 1) + '"></div>';
+            }
+            
+            // Add dots based on positions
+            // For simplicity, this visualizer shows positions relative to the start of the shape
+            const baseFret = Math.min(...chord.positions.filter(p => p > 0)) || 0;
+            
+            chord.positions.forEach((pos, stringIndex) => {
+                fretboardHTML += `<div class="string" style="grid-column: ${stringIndex + 1}; grid-row: 1 / span 5">`;
+                if (pos > 0) {
+                    const displayFret = pos === 0 ? 0 : (pos - (baseFret > 0 ? baseFret - 1 : 0));
+                    fretboardHTML += `<div class="dot" style="top: ${(displayFret * 30) - 15}px">${pos}</div>`;
+                }
+                fretboardHTML += '</div>';
+            });
+
+            fretboardHTML += '</div>';
+
+            card.innerHTML = `
+                <div class="open-marker">${chord.positions.join(' ')}</div>
+                <div class="chord-name">${chord.name}</div>
+                ${fretboardHTML}
+                <p style="text-align:center; font-size: 0.8rem; color: #64748b; margin-top:10px;">${chord.type}</p>
+            `;
+            return card;
+        }
+
+        const container = document.getElementById('chordGrid');
+        chords.forEach(c => container.appendChild(createChordCard(c)));
+    </script>
 </body>
 </html>
