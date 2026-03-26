@@ -3,143 +3,95 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Open E Alternate Tuning Trainer</title>
+    <title>Open E Tuning Chord Deck</title>
     <style>
-        :root { --wood: #3e2723; --string: #ced4da; --inlay: #e9ecef; --highlight: #ffc107; --root: #ef4444; }
-        body { font-family: 'Segoe UI', sans-serif; background: #1a1a1a; color: white; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        :root {
+            --primary: #2c3e50;
+            --accent: #e74c3c;
+            --bg: #f4f4f9;
+        }
+        body { font-family: sans-serif; background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; }
         
-        .dashboard { background: #2d2d2d; padding: 20px; border-radius: 12px; margin-bottom: 20px; display: flex; gap: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
-        select, button { padding: 10px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; }
-        .score-box { font-size: 24px; color: var(--highlight); }
+        /* The Card Container */
+        .card-container { perspective: 1000px; width: 320px; height: 450px; cursor: pointer; }
+        .card { 
+            position: relative; width: 100%; height: 100%; text-align: center; 
+            transition: transform 0.6s; transform-style: preserve-3d; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border-radius: 15px;
+        }
+        .card.is-flipped { transform: rotateY(180deg); }
 
-        .fretboard-container { position: relative; background: var(--wood); padding: 20px 0; border-radius: 4px; border-left: 15px solid #222; overflow-x: auto; width: 100%; max-width: 1000px; }
-        .fretboard { display: grid; grid-template-rows: repeat(6, 35px); position: relative; min-width: 800px; }
-        .string { position: relative; display: flex; align-items: center; border-bottom: 1px solid #555; }
-        .string::after { content: ''; position: absolute; width: 100%; height: var(--th); background: var(--string); box-shadow: 0 2px 2px rgba(0,0,0,0.5); z-index: 1; }
+        /* Front & Back Styles */
+        .card-face {
+            position: absolute; width: 100%; height: 100%; backface-visibility: hidden;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            background: white; border-radius: 15px; border: 2px solid var(--primary);
+        }
+        .card-back { transform: rotateY(180deg); background: #fffdf0; }
+
+        h2 { color: var(--primary); margin: 10px 0; }
+        .fretboard { width: 200px; height: 280px; border: 1px solid #ddd; position: relative; background: #fafafa; }
         
-        .fret { flex: 1; position: relative; display: flex; align-items: center; justify-content: center; border-right: 4px solid #888; z-index: 2; cursor: pointer; height: 100%; }
-        .note-marker { width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 900; color: black; background: white; visibility: hidden; z-index: 3; transition: 0.2s; border: 2px solid #333; }
-        .note-marker.visible { visibility: visible; }
-        .note-marker.root { background: var(--root); color: white; }
-        .note-marker.scale { background: var(--highlight); }
-        
-        .string-label { position: absolute; left: -40px; width: 30px; text-align: center; font-weight: bold; color: var(--highlight); }
+        /* Simple Fretboard Graphic Simulation */
+        .string { position: absolute; background: #888; width: 2px; height: 100%; }
+        .fret { position: absolute; background: #ccc; width: 100%; height: 2px; }
+
+        button {
+            margin-top: 30px; padding: 12px 25px; font-size: 16px;
+            background: var(--primary); color: white; border: none; border-radius: 5px; cursor: pointer;
+        }
+        button:hover { background: var(--accent); }
     </style>
 </head>
 <body>
 
-    <div class="dashboard">
-        <div>
-            <label>Mode:</label>
-            <select id="viewMode" onchange="updateFretboard()">
-                <option value="all">Show All Notes</option>
-                <option value="major">E Major Scale</option>
-                <option value="blues">E Blues Scale</option>
-                <option value="quiz">Fretboard Quiz</option>
-            </select>
+    <div class="card-container" onclick="this.querySelector('.card').classList.toggle('is-flipped')">
+        <div class="card" id="card-inner">
+            <div class="card-face card-front">
+                <h2 id="chord-name">A Major</h2>
+                <p>Identify the shape for Open E</p>
+                <div class="fretboard" id="empty-fretboard">
+                    </div>
+            </div>
+            <div class="card-face card-back">
+                <h2>Solution</h2>
+                <div id="solution-text" style="font-size: 24px; font-weight: bold; color: var(--accent);">5-5-5-5-5-5</div>
+                <p>Full Bar at 5th Fret</p>
+            </div>
         </div>
-        <div class="score-box">Score: <span id="score">0</span></div>
-        <button onclick="resetQuiz()">New Quiz Note</button>
     </div>
 
-    <div class="fretboard-container">
-        <div id="fretboard" class="fretboard"></div>
-    </div>
-
-    <h3 id="targetNoteDisplay" style="color: var(--highlight)"></h3>
+    <button onclick="nextCard(event)">Next Chord</button>
 
     <script>
-        const NOTES = ["E", "F", "F#", "G", "G#", "A", "A#", "B", "C", "C#", "D", "D#"];
-        // OPEN E TUNING: E2 - B2 - E3 - G#3 - B3 - E4
-        const OPEN_E = [0, 7, 4, 8, 7, 0]; // Note offsets relative to E
-        const E_MAJOR = ["E", "F#", "G#", "A", "B", "C#", "D#"];
-        const E_BLUES = ["E", "G", "A", "A#", "B", "D"];
-        
-        let score = 0;
-        let targetNote = "";
+        const deck = [
+            { name: "E Major", solution: "0-0-0-0-0-0", note: "Open Strings" },
+            { name: "A Major", solution: "5-5-5-5-5-5", note: "IV Chord" },
+            { name: "B Major", solution: "7-7-7-7-7-7", note: "V Chord" },
+            { name: "E Octave", solution: "12-12-12-12-12-12", note: "12th Fret Bar" }
+        ];
 
-        function createFretboard() {
-            const board = document.getElementById('fretboard');
-            board.innerHTML = '';
+        let currentIndex = 0;
+
+        function nextCard(event) {
+            event.stopPropagation(); // Prevents flipping when clicking the button
+            const card = document.getElementById('card-inner');
+            card.classList.remove('is-flipped');
             
-            // Strings from High E to Low E
-            const tuning = [0, 7, 8, 4, 7, 0]; 
-            const labels = ["E", "B", "G#", "E", "B", "E"];
-            const thickness = ["1px", "1.5px", "2px", "2.5px", "3px", "4px"];
-
-            tuning.forEach((offset, sIdx) => {
-                const stringDiv = document.createElement('div');
-                stringDiv.className = 'string';
-                stringDiv.style.setProperty('--th', thickness[sIdx]);
-                
-                const label = document.createElement('div');
-                label.className = 'string-label';
-                label.innerText = labels[sIdx];
-                stringDiv.appendChild(label);
-
-                for (let f = 0; f <= 15; f++) {
-                    const noteIdx = (offset + f) % 12;
-                    const noteName = NOTES[noteIdx];
-                    
-                    const fret = document.createElement('div');
-                    fret.className = 'fret';
-                    fret.onclick = () => handleFretClick(noteName);
-                    
-                    const marker = document.createElement('div');
-                    marker.className = 'note-marker';
-                    marker.innerText = noteName;
-                    marker.id = `n-${sIdx}-${f}`;
-                    if (noteName === "E") marker.classList.add('root');
-                    
-                    fret.appendChild(marker);
-                    stringDiv.appendChild(fret);
-                }
-                board.appendChild(stringDiv);
-            });
-            updateFretboard();
+            setTimeout(() => {
+                currentIndex = (currentIndex + 1) % deck.length;
+                document.getElementById('chord-name').innerText = deck[currentIndex].name;
+                document.getElementById('solution-text').innerText = deck[currentIndex].solution;
+            }, 200);
         }
 
-        function updateFretboard() {
-            const mode = document.getElementById('viewMode').value;
-            const markers = document.querySelectorAll('.note-marker');
-            
-            markers.forEach(m => {
-                const note = m.innerText;
-                m.classList.remove('visible', 'scale');
-                
-                if (mode === 'all') m.classList.add('visible');
-                else if (mode === 'major' && E_MAJOR.includes(note)) {
-                    m.classList.add('visible', 'scale');
-                    if (note === "E") m.classList.add('root');
-                }
-                else if (mode === 'blues' && E_BLUES.includes(note)) {
-                    m.classList.add('visible', 'scale');
-                }
-                else if (mode === 'quiz') m.classList.remove('visible');
-            });
+        // Generate visual strings for the "blank" fretboard
+        const fb = document.getElementById('empty-fretboard');
+        for(let i=0; i<6; i++) {
+            let s = document.createElement('div');
+            s.className = 'string';
+            s.style.left = (i * 20 + 50) + 'px';
+            fb.appendChild(s);
         }
-
-        function resetQuiz() {
-            targetNote = NOTES[Math.floor(Math.random() * NOTES.length)];
-            document.getElementById('targetNoteDisplay').innerText = `Find all: ${targetNote}`;
-            document.getElementById('viewMode').value = 'quiz';
-            updateFretboard();
-        }
-
-        function handleFretClick(note) {
-            if (document.getElementById('viewMode').value !== 'quiz') return;
-            
-            if (note === targetNote) {
-                score += 10;
-                document.getElementById('score').innerText = score;
-                // Flash green or add sound logic here
-            } else {
-                score = Math.max(0, score - 5);
-                document.getElementById('score').innerText = score;
-            }
-        }
-
-        createFretboard();
     </script>
 </body>
 </html>
