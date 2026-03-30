@@ -164,3 +164,200 @@
 </script>
 </body>
 </html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Open E Publisher Pro</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        :root { --primary: #2563eb; --bg: #f1f5f9; --card: #ffffff; --text: #1e293b; --finger: #8b2e5f; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        
+        .panel { background: var(--card); padding: 25px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); width: 100%; max-width: 700px; margin-bottom: 25px; }
+        .flex-row { display: flex; gap: 10px; margin-bottom: 15px; }
+        input, select { flex: 1; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; }
+        
+        .interactive-fb { display: flex; gap: 15px; justify-content: center; padding: 20px; background: #fff; border: 2px solid #334155; border-radius: 12px; margin: 15px 0; }
+        .string-col { display: flex; flex-direction: column; gap: 8px; align-items: center; }
+        .fret-node { width: 32px; height: 32px; border-radius: 50%; border: 1px solid #e2e8f0; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold; }
+        .fret-node.active { background: var(--finger); color: white; border-color: var(--finger); }
+        .status-btn { font-weight: 900; cursor: pointer; color: var(--primary); height: 30px; }
+
+        .btn { padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: 700; transition: 0.2s; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-outline { background: white; border: 1px solid #cbd5e1; color: var(--text); }
+        .btn-pdf { background: #10b981; color: white; }
+        
+        .library-section { width: 100%; max-width: 1000px; }
+        .library-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .chord-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 20px; background: white; padding: 20px; border-radius: 12px; }
+        .chord-card { text-align: center; border: 1px solid #f1f5f9; padding: 10px; position: relative; }
+        .del-btn { position: absolute; top: 0; right: 0; color: #ef4444; background: none; border: none; cursor: pointer; font-weight: bold; }
+        
+        @media print { .no-print { display: none; } }
+    </style>
+</head>
+<body>
+
+    <div class="panel no-print">
+        <h2 style="margin-top:0">Chord Designer</h2>
+        <div class="flex-row">
+            <input type="text" id="chordName" placeholder="Chord Name (e.g. E7#9)">
+            <select id="targetLibrary"></select>
+            <button class="btn btn-outline" onclick="addNewLibrary()">+ New Library</button>
+        </div>
+
+        <div class="interactive-fb" id="builder"></div>
+
+        <div class="flex-row">
+            <button class="btn btn-primary" style="flex:2" onclick="saveChord()">Save to Selected Library</button>
+        </div>
+    </div>
+
+    <div class="library-section" id="printArea">
+        <div class="library-header no-print">
+            <h2 id="displayLibName">My Chords</h2>
+            <button class="btn btn-pdf" onclick="generatePDF()">Download Library as PDF</button>
+        </div>
+        <div id="chordGrid" class="chord-grid"></div>
+    </div>
+
+    <script>
+        const STRINGS = ['E','B','E','G#','B','E'];
+        let currentPos = [0,0,0,0,0,0];
+        let libraries = JSON.parse(localStorage.getItem('openE_Collections')) || { "Default Library": [] };
+        let activeLib = Object.keys(libraries)[0];
+
+        function init() {
+            renderBuilder();
+            renderLibrarySelect();
+            renderGrid();
+        }
+
+        function renderBuilder() {
+            const container = document.getElementById('builder');
+            container.innerHTML = '';
+            STRINGS.forEach((note, sIdx) => {
+                const col = document.createElement('div');
+                col.className = 'string-col';
+                
+                const status = document.createElement('div');
+                status.className = 'status-btn';
+                status.innerText = currentPos[sIdx] === -1 ? 'X' : (currentPos[sIdx] === 0 ? 'O' : '•');
+                status.onclick = () => { currentPos[sIdx] = (currentPos[sIdx] === 0 ? -1 : 0); renderBuilder(); };
+                col.appendChild(status);
+
+                for(let f=1; f<=5; f++) {
+                    const node = document.createElement('div');
+                    node.className = `fret-node ${currentPos[sIdx] === f ? 'active' : ''}`;
+                    node.innerText = f;
+                    node.onclick = () => { currentPos[sIdx] = (currentPos[sIdx] === f ? 0 : f); renderBuilder(); };
+                    col.appendChild(node);
+                }
+                container.appendChild(col);
+            });
+        }
+
+        function renderLibrarySelect() {
+            const sel = document.getElementById('targetLibrary');
+            sel.innerHTML = '';
+            Object.keys(libraries).forEach(name => {
+                const opt = document.createElement('option');
+                opt.value = name; opt.innerText = name;
+                if(name === activeLib) opt.selected = true;
+                sel.appendChild(opt);
+            });
+            sel.onchange = (e) => { activeLib = e.target.value; renderGrid(); };
+        }
+
+        function addNewLibrary() {
+            const name = prompt("Enter Library Name:");
+            if(name && !libraries[name]) {
+                libraries[name] = [];
+                activeLib = name;
+                saveData();
+                renderLibrarySelect();
+                renderGrid();
+            }
+        }
+
+        function saveChord() {
+            const name = document.getElementById('chordName').value || "Unnamed";
+            libraries[activeLib].push({ name, p: [...currentPos] });
+            saveData();
+            document.getElementById('chordName').value = '';
+            currentPos = [0,0,0,0,0,0];
+            renderBuilder();
+            renderGrid();
+        }
+
+        function deleteChord(idx) {
+            libraries[activeLib].splice(idx, 1);
+            saveData();
+            renderGrid();
+        }
+
+        function saveData() { localStorage.setItem('openE_Collections', JSON.stringify(libraries)); }
+
+        function renderGrid() {
+            document.getElementById('displayLibName').innerText = activeLib;
+            const grid = document.getElementById('chordGrid');
+            grid.innerHTML = '';
+            libraries[activeLib].forEach((chord, i) => {
+                const card = document.createElement('div');
+                card.className = 'chord-card';
+                card.innerHTML = `<button class="del-btn no-print" onclick="deleteChord(${i})">×</button>
+                                  <div style="font-weight:bold;margin-bottom:8px;">${chord.name}</div>
+                                  ${drawSVG(chord.p)}`;
+                grid.appendChild(card);
+            });
+        }
+
+        function drawSVG(p) {
+            let svg = `<svg viewBox="0 0 200 240">`;
+            const m=30, w=140, h=180, sw=w/5, fh=h/5;
+            for(let i=0; i<=5; i++) {
+                const y = m + (i*fh);
+                svg += `<line x1="${m}" y1="${y}" x2="${m+w}" y2="${y}" stroke="${i===0?'#000':'#cbd5e1'}" stroke-width="${i===0?5:2}" />`;
+            }
+            p.forEach((f, i) => {
+                const x = m + (i*sw);
+                svg += `<line x1="${x}" y1="${m}" x2="${x}" y2="${m+h}" stroke="#475569" stroke-width="1.5" />`;
+                if(f === -1) svg += `<text x="${x}" y="${m-10}" fill="red" font-size="12" text-anchor="middle">X</text>`;
+                else if(f === 0) svg += `<circle cx="${x}" cy="${m-10}" r="4" fill="none" stroke="#64748b" />`;
+                else {
+                    const y = m + (f*fh) - (fh/2);
+                    svg += `<circle cx="${x}" cy="${y}" r="8" fill="#8b2e5f" /><text x="${x}" y="${y}" fill="white" font-size="8" text-anchor="middle" alignment-baseline="central">${f}</text>`;
+                }
+            });
+            return svg + `</svg>`;
+        }
+
+        async function generatePDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('p', 'mm', 'a4');
+            const element = document.getElementById('printArea');
+            
+            // Hide delete buttons and UI for the capture
+            document.querySelectorAll('.no-print').forEach(el => el.style.visibility = 'hidden');
+            
+            const canvas = await html2canvas(element, { scale: 2 });
+            const imgData = canvas.toDataURL('image/png');
+            
+            const imgProps = doc.getImageProperties(imgData);
+            const pdfWidth = doc.internal.pageSize.getWidth();
+            const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+            
+            doc.addImage(imgData, 'PNG', 0, 10, pdfWidth, pdfHeight);
+            doc.save(`${activeLib}.pdf`);
+            
+            document.querySelectorAll('.no-print').forEach(el => el.style.visibility = 'visible');
+        }
+
+        init();
+    </script>
+</body>
+</html>
