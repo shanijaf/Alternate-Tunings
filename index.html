@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Open E & G Publisher Pro</title>
+    <title>Open E & G Publisher Pro - Preset Fix</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
@@ -12,118 +12,137 @@
         
         .panel { background: var(--card); padding: 25px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); width: 100%; max-width: 850px; margin-bottom: 25px; }
         .flex-row { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; }
-        input, select { flex: 1; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; min-width: 150px; }
-        label { font-size: 12px; font-weight: bold; color: #64748b; margin-bottom: 4px; display: block; }
+        .input-group { flex: 1; min-width: 200px; display: flex; flex-direction: column; }
+        
+        label { font-size: 12px; font-weight: bold; color: #64748b; margin-bottom: 5px; text-transform: uppercase; }
+        input, select { padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px; background: white; }
+        select:focus { border-color: var(--primary); outline: none; }
         
         .type-toggle { display: flex; background: #e2e8f0; border-radius: 8px; padding: 4px; margin-bottom: 15px; }
-        .type-btn { flex: 1; border: none; padding: 8px; border-radius: 6px; cursor: pointer; font-weight: bold; background: transparent; }
+        .type-btn { flex: 1; border: none; padding: 10px; border-radius: 6px; cursor: pointer; font-weight: bold; background: transparent; }
         .type-btn.active { background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1); color: var(--primary); }
 
         .interactive-fb { display: flex; gap: 12px; justify-content: center; padding: 20px; background: #fff; border: 2px solid #334155; border-radius: 12px; margin: 15px 0; overflow-x: auto; }
         .string-col { display: flex; flex-direction: column; gap: 6px; align-items: center; }
-        .fret-node { width: 28px; height: 28px; border-radius: 50%; border: 1px solid #e2e8f0; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 10px; }
+        .fret-node { width: 30px; height: 30px; border-radius: 50%; border: 1px solid #e2e8f0; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px; }
         .fret-node.active { background: var(--finger); color: white; border-color: var(--finger); }
-        .status-btn { font-weight: 900; cursor: pointer; color: var(--primary); height: 25px; }
+        .status-btn { font-weight: 900; cursor: pointer; color: var(--primary); height: 25px; font-size: 16px; }
 
-        .btn { padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: 700; transition: 0.2s; }
-        .btn-primary { background: var(--primary); color: white; width: 100%; margin-top: 10px; }
+        .btn { padding: 14px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: 700; transition: 0.2s; width: 100%; }
+        .btn-primary { background: var(--primary); color: white; }
         
-        .chord-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 20px; background: white; padding: 20px; border-radius: 12px; width: 100%; max-width: 1100px; }
-        .chord-card { text-align: center; border: 1px solid #f1f5f9; padding: 15px; position: relative; border-radius: 8px; background: #fff; }
-        .card-tab { grid-column: 1 / -1; background: #f8fafc; }
-        .del-btn { position: absolute; top: 5px; right: 5px; color: #ef4444; background: none; border: none; cursor: pointer; }
+        .chord-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 20px; width: 100%; max-width: 1100px; margin-top: 20px; }
+        .chord-card { background: white; padding: 15px; border-radius: 8px; position: relative; border: 1px solid #e2e8f0; }
+        .card-tab { grid-column: 1 / -1; }
+        .del-btn { position: absolute; top: 10px; right: 10px; color: #ef4444; background: none; border: none; cursor: pointer; font-size: 18px; }
     </style>
 </head>
-<body>
+<body onload="init()">
 
     <div class="panel no-print">
-        <h2 style="margin-top:0">Chord & Table Designer</h2>
+        <h2 style="margin-top:0">Guitar Publisher Pro</h2>
         
         <div class="flex-row">
-            <div style="flex:1">
+            <div class="input-group">
                 <label>1. Select Tuning</label>
                 <select id="tuningSelect" onchange="changeTuning()">
                     <option value="OPEN_E">Open E (E-B-E-G#-B-E)</option>
                     <option value="OPEN_G">Open G (D-G-D-G-B-D)</option>
                 </select>
             </div>
-            <div style="flex:2">
+            <div class="input-group">
                 <label>2. Load Preset Chord</label>
                 <select id="chordPresets" onchange="loadPreset()">
-                    <option value="">-- Choose a Preset to Edit --</option>
+                    <option value="">-- Choose a Preset --</option>
                 </select>
             </div>
         </div>
 
         <div class="type-toggle">
-            <button id="btnChord" class="type-btn active" onclick="setMode('chord')">Chord Diagram</button>
-            <button id="btnTab" class="type-btn" onclick="setMode('tab')">Table View</button>
+            <button id="btnChord" class="type-btn active" onclick="setMode('chord')">Chord Diagram (5 Fret)</button>
+            <button id="btnTab" class="type-btn" onclick="setMode('tab')">Full Neck Table (12 Fret)</button>
         </div>
 
         <div class="flex-row">
-            <input type="text" id="entryName" placeholder="Name this entry...">
-            <select id="targetLibrary"></select>
+            <div class="input-group">
+                <label>Entry Name</label>
+                <input type="text" id="entryName" placeholder="e.g. Blues Slide or A7">
+            </div>
         </div>
 
         <div class="interactive-fb" id="builder"></div>
-        <button class="btn btn-primary" onclick="saveEntry()">Save to My Library</button>
+        <button class="btn btn-primary" onclick="saveEntry()">Save to Library</button>
     </div>
 
     <div id="printArea" style="width:100%; max-width:1100px;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;" class="no-print">
-            <h2 id="displayLibName">My Library</h2>
-            <button class="btn" style="background:#10b981; color:white" onclick="generatePDF()">Download PDF</button>
+            <h2>Your Library</h2>
+            <button class="btn" style="background:#10b981; color:white; width:auto;" onclick="generatePDF()">Download PDF</button>
         </div>
         <div id="chordGrid" class="chord-grid"></div>
     </div>
 
     <script>
+        // CORE DATA - 30+ Chords included
         const TUNINGS = {
-            OPEN_E: { strings: ['E','B','E','G#','B','E'], chords: [
-                { name: "E Major", p: [0,0,0,0,0,0] }, { name: "A Major", p: [5,5,5,5,5,5] },
-                { name: "B Major", p: [7,7,7,7,7,7] }, { name: "E7", p: [0,0,0,1,0,0] },
-                { name: "A7", p: [5,5,5,6,5,5] }, { name: "B7", p: [7,7,7,8,7,7] },
-                { name: "Emaj7", p: [0,0,1,1,1,0] }, { name: "E Minor", p: [0,0,0,0,0,0] }, // Adjusted for tuning
-                { name: "A Minor", p: [5,5,5,5,5,5] }, { name: "E9", p: [0,2,0,1,0,2] },
-                { name: "E13", p: [0,4,0,1,0,0] }, { name: "F#m11", p: [2,0,1,0,0,0] },
-                { name: "G#m", p: [4,4,4,4,4,4] }, { name: "C#m7", p: [9,9,9,9,9,9] },
-                { name: "E7#9", p: [0,0,0,1,3,3] }
-            ]},
-            OPEN_G: { strings: ['D','G','D','G','B','D'], chords: [
-                { name: "G Major", p: [0,0,0,0,0,0] }, { name: "C Major", p: [5,5,5,5,5,5] },
-                { name: "D Major", p: [7,7,7,7,7,7] }, { name: "G7", p: [0,0,0,0,0,3] },
-                { name: "C7", p: [5,5,5,5,5,8] }, { name: "D7", p: [7,7,7,7,7,10] },
-                { name: "Gmaj7", p: [0,0,0,0,3,4] }, { name: "G Minor", p: [0,0,0,0,0,0] },
-                { name: "Am7", p: [2,2,2,2,1,2] }, { name: "Bm7", p: [4,4,4,4,3,4] },
-                { name: "G9", p: [0,2,0,2,0,3] }, { name: "Gsus4", p: [0,0,0,0,1,0] },
-                { name: "C/G", p: [0,0,2,0,1,2] }, { name: "D/G", p: [0,0,4,0,3,4] },
-                { name: "G Blues Box", p: [0,3,0,3,3,3] }
-            ]}
+            OPEN_E: { 
+                strings: ['E','B','E','G#','B','E'], 
+                chords: [
+                    { name: "E Major", p: [0,0,0,0,0,0] }, { name: "A Major", p: [5,5,5,5,5,5] },
+                    { name: "B Major", p: [7,7,7,7,7,7] }, { name: "E7", p: [0,0,0,1,0,0] },
+                    { name: "A7", p: [5,5,5,6,5,5] }, { name: "B7", p: [7,7,7,8,7,7] },
+                    { name: "Emaj7", p: [0,0,1,1,1,0] }, { name: "E Minor", p: [0,0,0,0,0,0] },
+                    { name: "E9", p: [0,2,0,1,0,2] }, { name: "A(9)", p: [0,0,2,1,2,0] },
+                    { name: "B7sus", p: [0,0,4,2,4,0] }, { name: "G Major", p: [3,0,0,0,0,3] },
+                    { name: "F#m11", p: [2,0,1,0,0,0] }, { name: "C#7sus/D#", p: [0,4,2,2,0,0] },
+                    { name: "E7#9", p: [0,0,0,1,3,3] }
+                ]
+            },
+            OPEN_G: { 
+                strings: ['D','G','D','G','B','D'], 
+                chords: [
+                    { name: "G Major", p: [0,0,0,0,0,0] }, { name: "C Major", p: [5,5,5,5,5,5] },
+                    { name: "D Major", p: [7,7,7,7,7,7] }, { name: "G7", p: [0,0,0,0,0,3] },
+                    { name: "C7", p: [5,5,5,5,5,8] }, { name: "D7", p: [7,7,7,7,7,10] },
+                    { name: "Gmaj7", p: [0,0,0,0,3,4] }, { name: "Am7", p: [2,2,2,2,1,2] },
+                    { name: "Bm7", p: [4,4,4,4,3,4] }, { name: "Gsus4", p: [0,0,0,0,1,0] },
+                    { name: "C/G", p: [0,0,2,0,1,2] }, { name: "D/G", p: [0,0,4,0,3,4] },
+                    { name: "G Minor", p: [0,0,0,3,3,0] }, { name: "Bb Major", p: [3,3,3,3,3,3] },
+                    { name: "G Blues Box", p: [0,3,0,3,3,3] }
+                ]
+            }
         };
 
         let currentPos = [0,0,0,0,0,0];
         let currentMode = 'chord';
         let activeTuning = 'OPEN_E';
-        let libraries = JSON.parse(localStorage.getItem('openE_Collections')) || { "My Library": [] };
-        let activeLib = "My Library";
+        let libraries = JSON.parse(localStorage.getItem('guitar_publisher_data')) || { "Default": [] };
 
-        function init() { populatePresets(); renderBuilder(); renderGrid(); renderLibrarySelect(); }
-
-        function changeTuning() {
-            activeTuning = document.getElementById('tuningSelect').value;
+        function init() {
             populatePresets();
-            currentPos = [0,0,0,0,0,0];
             renderBuilder();
+            renderGrid();
         }
 
         function populatePresets() {
             const sel = document.getElementById('chordPresets');
+            // Reset to default option first
             sel.innerHTML = '<option value="">-- Choose a Preset --</option>';
+            
+            // Populate based on active tuning
             TUNINGS[activeTuning].chords.forEach((c, i) => {
                 const opt = document.createElement('option');
-                opt.value = i; opt.innerText = c.name;
+                opt.value = i;
+                opt.innerText = c.name;
                 sel.appendChild(opt);
             });
+        }
+
+        function changeTuning() {
+            activeTuning = document.getElementById('tuningSelect').value;
+            populatePresets();
+            currentPos = [0,0,0,0,0,0]; // Reset fretboard
+            renderBuilder();
         }
 
         function loadPreset() {
@@ -131,29 +150,43 @@
             if(idx === "") return;
             const preset = TUNINGS[activeTuning].chords[idx];
             document.getElementById('entryName').value = preset.name;
-            currentPos = [...preset.p];
+            currentPos = [...preset.p]; // Copy coordinates
             renderBuilder();
         }
 
-        function setMode(mode) { currentMode = mode; renderBuilder(); }
+        function setMode(mode) {
+            currentMode = mode;
+            document.getElementById('btnChord').classList.toggle('active', mode === 'chord');
+            document.getElementById('btnTab').classList.toggle('active', mode === 'tab');
+            renderBuilder();
+        }
 
         function renderBuilder() {
             const container = document.getElementById('builder');
             container.innerHTML = '';
             const fretLimit = currentMode === 'chord' ? 5 : 12;
+            
             TUNINGS[activeTuning].strings.forEach((note, sIdx) => {
                 const col = document.createElement('div');
                 col.className = 'string-col';
+                
                 const status = document.createElement('div');
                 status.className = 'status-btn';
                 status.innerText = currentPos[sIdx] === -1 ? 'X' : (currentPos[sIdx] === 0 ? 'O' : '•');
-                status.onclick = () => { currentPos[sIdx] = (currentPos[sIdx] === 0 ? -1 : 0); renderBuilder(); };
+                status.onclick = () => { 
+                    currentPos[sIdx] = (currentPos[sIdx] === 0 ? -1 : 0); 
+                    renderBuilder(); 
+                };
                 col.appendChild(status);
+                
                 for(let f=1; f<=fretLimit; f++) {
                     const node = document.createElement('div');
                     node.className = `fret-node ${currentPos[sIdx] === f ? 'active' : ''}`;
                     node.innerText = f;
-                    node.onclick = () => { currentPos[sIdx] = (currentPos[sIdx] === f ? 0 : f); renderBuilder(); };
+                    node.onclick = () => { 
+                        currentPos[sIdx] = (currentPos[sIdx] === f ? 0 : f); 
+                        renderBuilder(); 
+                    };
                     col.appendChild(node);
                 }
                 container.appendChild(col);
@@ -161,23 +194,36 @@
         }
 
         function saveEntry() {
-            const name = document.getElementById('entryName').value || "Unnamed";
-            libraries[activeLib].push({ name, p: [...currentPos], type: currentMode, tuning: activeTuning });
-            localStorage.setItem('openE_Collections', JSON.stringify(libraries));
+            const name = document.getElementById('entryName').value || "Unnamed Chord";
+            libraries["Default"].push({
+                name,
+                p: [...currentPos],
+                type: currentMode,
+                tuning: activeTuning
+            });
+            localStorage.setItem('guitar_publisher_data', JSON.stringify(libraries));
+            document.getElementById('entryName').value = '';
+            renderGrid();
+        }
+
+        function deleteEntry(idx) {
+            libraries["Default"].splice(idx, 1);
+            localStorage.setItem('guitar_publisher_data', JSON.stringify(libraries));
             renderGrid();
         }
 
         function renderGrid() {
             const grid = document.getElementById('chordGrid');
             grid.innerHTML = '';
-            libraries[activeLib].forEach((item, i) => {
+            libraries["Default"].forEach((item, i) => {
                 const card = document.createElement('div');
                 card.className = `chord-card ${item.type === 'tab' ? 'card-tab' : ''}`;
-                const tuningLabel = item.tuning.replace('_',' ');
-                card.innerHTML = `<button class="del-btn no-print" onclick="deleteEntry(${i})">×</button>
-                                  <div style="font-size:10px; color:#64748b; text-align:left;">${tuningLabel}</div>
-                                  <div style="font-weight:bold;margin-bottom:10px;text-align:left;">${item.name}</div>
-                                  ${item.type === 'tab' ? drawNeck(item.p, item.tuning) : drawChord(item.p)}`;
+                card.innerHTML = `
+                    <button class="del-btn no-print" onclick="deleteEntry(${i})">×</button>
+                    <div style="font-size:10px; color:#64748b; font-weight:bold">${item.tuning.replace('_',' ')}</div>
+                    <div style="font-weight:bold; margin-bottom:10px;">${item.name}</div>
+                    ${item.type === 'tab' ? drawNeck(item.p, item.tuning) : drawChord(item.p)}
+                `;
                 grid.appendChild(card);
             });
         }
@@ -225,11 +271,19 @@
             return svg + `</svg>`;
         }
 
-        function deleteEntry(idx) { libraries[activeLib].splice(idx,1); localStorage.setItem('openE_Collections', JSON.stringify(libraries)); renderGrid(); }
-        function renderLibrarySelect() { /* Simplification: Using Default */ document.getElementById('targetLibrary').innerHTML = '<option>My Library</option>'; }
-        async function generatePDF() { /* Uses existing logic from previous version */ }
-
-        init();
+        async function generatePDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('p', 'mm', 'a4');
+            const element = document.getElementById('printArea');
+            document.querySelectorAll('.no-print').forEach(el => el.style.display = 'none');
+            const canvas = await html2canvas(element, { scale: 2 });
+            const imgData = canvas.toDataURL('image/png');
+            const pdfWidth = doc.internal.pageSize.getWidth();
+            const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+            doc.addImage(imgData, 'PNG', 0, 10, pdfWidth, pdfHeight);
+            doc.save(`Guitar_Library.pdf`);
+            document.querySelectorAll('.no-print').forEach(el => el.style.display = 'flex');
+        }
     </script>
 </body>
 </html>
